@@ -1,18 +1,13 @@
 package se.qamcom.fileupload;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import javax.net.ssl.HttpsURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
- 
+import java.util.Map;
+
 /**
  * This utility class provides an abstraction layer for sending multipart HTTP
  * POST requests to a web server.
@@ -49,8 +44,8 @@ public class MultipartUtility {
         httpConn.setRequestProperty("arena_session_id", sessionId);
         httpConn.setRequestProperty("Content-Type",
                 "multipart/form-data; boundary=" + boundary);
-        httpConn.setRequestProperty("User-Agent", "Alexander Sopov");
-        httpConn.setRequestProperty("Test", "Bonjour");
+        //httpConn.setRequestProperty("User-Agent", "Alexander Sopov");
+        //httpConn.setRequestProperty("Test", "Bonjour");
         outputStream = httpConn.getOutputStream();
         writer = new PrintWriter(new OutputStreamWriter(outputStream, charset),
                 true);
@@ -81,6 +76,8 @@ public class MultipartUtility {
     public void addFilePart(String fieldName, File uploadFile)
             throws IOException {
         String fileName = uploadFile.getName();
+        String contentType = URLConnection.guessContentTypeFromName(fileName);
+        System.out.println(contentType);
         writer.append("--" + boundary).append(LINE_FEED);
         writer.append(
                 "Content-Disposition: form-data; name=\"" + fieldName
@@ -88,25 +85,34 @@ public class MultipartUtility {
                 .append(LINE_FEED);
         writer.append(
                 "Content-Type: "
-                        + URLConnection.guessContentTypeFromName(fileName))
+                        + contentType)
                 .append(LINE_FEED);
         writer.append("Content-Transfer-Encoding: binary").append(LINE_FEED);
-        writer.append(LINE_FEED);
-        writer.flush();
- 
-        FileInputStream inputStream = new FileInputStream(uploadFile);
-        byte[] buffer = new byte[4096];
-        int bytesRead = -1;
-        while ((bytesRead = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, bytesRead);
-        }
-        outputStream.flush();
-        inputStream.close();
-         
-        writer.append(LINE_FEED);
+        writer.append(LINE_FEED).append(LINE_FEED);
+        String bytes = readFile(uploadFile);
+        writer.append(bytes);
+        //writer.append(LINE_FEED);
+        //writer.append("Content-Transfer-Encoding: binary");
         writer.flush();    
     }
- 
+
+    private String readFile(File uploadFile) throws IOException{
+        String content = null;
+        FileReader reader = null;
+        try {
+            reader = new FileReader(uploadFile);
+            char[] chars = new char[(int) uploadFile.length()];
+            reader.read(chars);
+            content = new String(chars);
+            reader.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(reader !=null){reader.close();}
+        }
+        return content;
+    }
+
     /**
      * Adds a header field to the request.
      * @param name - name of the header field
@@ -129,7 +135,7 @@ public class MultipartUtility {
         writer.append(LINE_FEED).flush();
         writer.append("--" + boundary + "--").append(LINE_FEED);
         writer.close();
- 
+        System.out.println(httpConn.getContent().toString());
         // checks server's status code first
         int status = httpConn.getResponseCode();
         if (status == HttpsURLConnection.HTTP_OK) {
@@ -146,5 +152,14 @@ public class MultipartUtility {
         }
  
         return response;
+    }
+
+    private void printProperties(Map<String, List<String>> mp) {
+        Iterator it = mp.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry pair = (Map.Entry)it.next();
+            System.out.println(pair.getKey() + " = " + pair.getValue());
+            it.remove(); // avoids a ConcurrentModificationException
+        }
     }
 }

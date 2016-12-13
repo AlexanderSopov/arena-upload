@@ -14,8 +14,8 @@ import org.json.JSONObject;
 public class FileUpload{
 
     private static String arenaSessionId;
-    private static final String email = "";
-    private static final String password = "";
+    private static final String email = "alexander.sopov@qamcom.se";
+    private static final String password = "IAmARobot2301";
 	private static final String BASE_URL = "https://api.arenasolutions.com/v1";
 
 	public static void main(String[] args) throws Exception{
@@ -94,7 +94,7 @@ public class FileUpload{
     private static void uploadFile(){
 
         String charset = "UTF-8";
-        File uploadFile = new File("H:\\TeddyBear\\Qamcom\\arenaUpload\\file\\hej.pdf");
+        File uploadFile = new File("C:\\Users\\alexander.sopov\\Documents\\qamcom\\confluence-scripts\\Arena-api-docs\\arena_api_developer_guide.pdf");
 
  
         try {
