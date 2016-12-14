@@ -20,14 +20,8 @@ public interface EndPoints {
 
     @Multipart
     @POST("items/{guid}/files")
-    Call<ResponseBody> addFile(@Path("guid") String guid, @Header("arena_session_id") String session,
-                               @Part("file.location") String location,
-                               @Part("file.category.guid") String categoryGuid,
-                               @Part("file.storageMethod") String storage,
-                               @Part("file.title") String title,
-                               @Part("file.edition") String edition,
-                               @Part("file.author.fullName") String fullName,
-                               @Part("file.format") String format,
+    Call<ResponseBody> addFile(@Path("guid") String guid,
+                               @Header("arena_session_id") String session,
                                @Part("fileContent")RequestBody file);
 
 

@@ -1,9 +1,8 @@
 package se.qamcom.fileupload;
 
 import com.sun.org.apache.xpath.internal.SourceTree;
-import okhttp3.MediaType;
-import okhttp3.RequestBody;
-import okhttp3.ResponseBody;
+import okhttp3.*;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -21,17 +20,25 @@ public class FileUpload{
 
     private EndPoints api;
     private Retrofit retrofit;
-    private final String email = "alexander.sopov@qamcom.se";
-    private final String password = "IAmARobot2301";
-	private final String BASE_URL = "https://api.arenasolutions.com/v1/";
+    private final String email = "";
+    private final String password = "";
+    private final String BASE_URL = "";
     private LoginResponse loginSession;
 
 
 
 	public static void main(String[] args){
-
         FileUpload upload = new FileUpload();
-        upload.retrofit = new Retrofit.Builder()
+
+
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        HttpLoggingInterceptor httpLoggingInterceptor = new HttpLoggingInterceptor();
+// Can be Level.BASIC, Level.HEADERS, or Level.BODY
+// See http://square.github.io/okhttp/3.x/logging-interceptor/ to see the options.
+        httpLoggingInterceptor.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        builder.networkInterceptors().add(httpLoggingInterceptor);
+
+        upload.retrofit = new Retrofit.Builder().client(builder.build())
                 .baseUrl(upload.BASE_URL)
                 .addConverterFactory((GsonConverterFactory.create()))
                 .build();
@@ -73,23 +80,21 @@ public class FileUpload{
 
     private void uploadFile(String guid, String location, String categoryGuid, String storageMethod, String title,
                             String edition, String fullname, String format) throws IOException {
-        MediaType MEDIA_TYPE_PDF = MediaType.parse(format);
+        MediaType MEDIA_TYPE = MediaType.parse(format);
         File file = new File(location);
-        RequestBody req = RequestBody.create(MEDIA_TYPE_PDF, file);
-        Call<ResponseBody> call = api.addFile(guid,
-                loginSession.arenaSessionId,
-                location, categoryGuid,
-                storageMethod,
-                title,
-                edition,
-                fullname,
-                format,
-                req);
+        RequestBody req = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file.location", location)
+                .addFormDataPart("file.category.guid", categoryGuid)
+                .addFormDataPart("file.storageMethod", storageMethod)
+                .addFormDataPart("file.title", title)
+                .addFormDataPart("file.edition", edition)
+                .addFormDataPart("file.author.fullName", fullname)
+                .addFormDataPart("file.format", format)
+                //.addFormDataPart("fileContent", file.getName(), RequestBody.create(MEDIA_TYPE, file))
+                .build();
 
-        System.out.println(call.request().toString());
-        System.out.println(call.request().body().toString());
-
-
+        Call<ResponseBody> call = api.addFile(guid, loginSession.arenaSessionId, req);
 
         Response<ResponseBody> res = call.execute();
         printStatus("add file", res.code());
